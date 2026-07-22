@@ -51,9 +51,13 @@ jobs:
         env:
           CMAKE_PREFIX_PATH: ${{ env.NCNN_DIR }}
         run: |
-          python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11" pytest
+          python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11" pytest auditwheel
           pip install numpy opencv-python-headless huggingface-hub pillow
           python -m build --wheel
+          auditwheel repair dist/*.whl -w wheelhouse
+          rm -f dist/*.whl
+          mv wheelhouse/*.whl dist/
+          rmdir wheelhouse
           pip install dist/*.whl
           python -c "from ncnn_ocr import NATIVE_AVAILABLE; assert NATIVE_AVAILABLE"
           pytest -q tests/test_integration.py

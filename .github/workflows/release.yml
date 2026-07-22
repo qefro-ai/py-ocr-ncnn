@@ -61,6 +61,14 @@ jobs:
           python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11"
           python -m build --wheel
 
+      - name: Repair wheel for PyPI (manylinux)
+        run: |
+          python -m pip install auditwheel
+          auditwheel repair dist/*.whl -w wheelhouse
+          rm -f dist/*.whl
+          mv wheelhouse/*.whl dist/
+          rmdir wheelhouse
+
       - name: Smoke test wheel
         run: |
           pip install dist/*.whl opencv-python-headless huggingface-hub pillow pytest
