@@ -114,52 +114,6 @@ pip install -e ".[dev]"
 PYTHONPATH=src pytest -q
 ```
 
-## Release to PyPI
-
-| Event | Workflow | What happens |
-|-------|----------|--------------|
-| Push to `main` / PR | `ci.yml` | Tests + builds wheels (artifacts only, **no PyPI**) |
-| Push tag `v*` | `release.yml` | Tests + builds wheels + **publishes to PyPI** |
-
-Pushing a version tag triggers `.github/workflows/release.yml`, which:
-
-1. Runs unit tests
-2. Builds Linux (`x86_64`) and macOS (`arm64`) wheels plus an sdist
-3. Runs an integration OCR smoke test on each wheel
-4. Publishes all artifacts to PyPI
-
-### One-time PyPI setup
-
-1. Create a PyPI API token at [pypi.org/manage/account/token](https://pypi.org/manage/account/token/) scoped to `ncnn-ocr`
-2. Add it as a GitHub secret:
-   - Go to [github.com/qefro-ai/py-ocr-ncnn/settings/secrets/actions](https://github.com/qefro-ai/py-ocr-ncnn/settings/secrets/actions)
-   - **New repository secret**
-   - Name: **`PYPI_API_TOKEN`**
-   - Value: your `pypi-...` token
-3. Create GitHub environment **`pypi`** (Settings → Environments) — used by the release workflow
-
-### Cut a release
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The workflow reads the tag (`v0.1.0` → version `0.1.0`) and uploads:
-
-- `ncnn_ocr-*-cp312-cp312-linux_x86_64.whl`
-- `ncnn_ocr-*-cp312-cp312-macosx_*_arm64.whl`
-- `ncnn_ocr-*.tar.gz`
-
-### Manual publish (fallback)
-
-```bash
-bash scripts/build_wheel.sh
-python -m twine upload dist/*
-```
-
-Requires `TWINE_USERNAME=__token__` and `TWINE_PASSWORD` set to a PyPI API token.
-
 ## License
 
 Apache-2.0 — see [LICENSE](LICENSE). The vendored PaddleOCR-ncnn-CPP sources retain their original license.
