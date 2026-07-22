@@ -1,0 +1,33 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*.so
+*.dylib
+*.pyd
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.scikit-build/
+cmake-build-*/
+
+# Virtual environments
+.venv/
+venv/
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Downloaded models (local dev)
+.models/
+
+# Editor swap
+*.swp

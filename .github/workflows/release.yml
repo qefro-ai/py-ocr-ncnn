@@ -1,0 +1,155 @@
+name: Release
+
+# PyPI publish ONLY on version tags (e.g. v0.1.0).
+# Never runs on push to main — see ci.yml for build-only CI.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  NCNN_TAG: "20241226"
+  NCNN_DIR: ${{ github.workspace }}/.ncnn
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy opencv-python-headless huggingface-hub pillow
+
+      - name: Run unit tests
+        run: PYTHONPATH=src pytest -q tests/test_package.py tests/test_arabic.py
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version from tag
+        run: bash .github/scripts/set_version_from_tag.sh
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libopencv-dev libomp-dev git
+
+      - name: Build and install ncnn
+        run: bash .github/scripts/build_ncnn.sh
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build wheel
+        env:
+          CMAKE_PREFIX_PATH: ${{ env.NCNN_DIR }}
+        run: |
+          python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11"
+          python -m build --wheel
+
+      - name: Smoke test wheel
+        run: |
+          pip install dist/*.whl opencv-python-headless huggingface-hub pillow
+          python -c "from ncnn_ocr import OCR, NATIVE_AVAILABLE; assert NATIVE_AVAILABLE"
+          python -m pytest -q tests/test_integration.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-linux-x86_64
+          path: dist/*.whl
+
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version from tag
+        run: bash .github/scripts/set_version_from_tag.sh
+
+      - name: Install system dependencies
+        run: |
+          brew install cmake ncnn opencv@4 libomp
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build wheel
+        env:
+          CMAKE_PREFIX_PATH: /opt/homebrew/opt/ncnn:/opt/homebrew/opt/opencv@4:/opt/homebrew/opt/libomp
+          OpenCV_DIR: /opt/homebrew/opt/opencv@4/lib/cmake/opencv4
+        run: |
+          python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11"
+          python -m build --wheel
+
+      - name: Smoke test wheel
+        run: |
+          pip install dist/*.whl opencv-python-headless huggingface-hub pillow
+          python -c "from ncnn_ocr import OCR, NATIVE_AVAILABLE; assert NATIVE_AVAILABLE"
+          python -m pytest -q tests/test_integration.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-macos-arm64
+          path: dist/*.whl
+
+  build-sdist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version from tag
+        run: bash .github/scripts/set_version_from_tag.sh
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist
+        run: |
+          python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11"
+          python -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, build-linux, build-macos, build-sdist]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/ncnn-ocr/
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List distributions
+        run: ls -lh dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          print-hash: true
+          password: ${{ secrets.PYPI_API_TOKEN }}

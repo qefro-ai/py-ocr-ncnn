@@ -1,0 +1,95 @@
+name: CI
+
+# Push to main / PRs: test + build wheels only. Does NOT publish to PyPI.
+# PyPI publish happens only in release.yml on version tags (v*).
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+env:
+  NCNN_TAG: "20241226"
+  NCNN_DIR: ${{ github.workspace }}/.ncnn
+
+jobs:
+  test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest numpy opencv-python-headless huggingface-hub pillow
+
+      - name: Run unit tests
+        run: PYTHONPATH=src pytest -q tests/test_package.py tests/test_arabic.py
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libopencv-dev libomp-dev git
+
+      - name: Build and install ncnn
+        run: bash .github/scripts/build_ncnn.sh
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build and test wheel
+        env:
+          CMAKE_PREFIX_PATH: ${{ env.NCNN_DIR }}
+        run: |
+          python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11" pytest
+          pip install numpy opencv-python-headless huggingface-hub pillow
+          python -m build --wheel
+          pip install dist/*.whl
+          python -c "from ncnn_ocr import NATIVE_AVAILABLE; assert NATIVE_AVAILABLE"
+          pytest -q tests/test_integration.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-wheel-linux-x86_64
+          path: dist/*.whl
+          retention-days: 7
+
+  build-macos:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: brew install cmake ncnn opencv@4 libomp
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build and test wheel
+        env:
+          CMAKE_PREFIX_PATH: /opt/homebrew/opt/ncnn:/opt/homebrew/opt/opencv@4:/opt/homebrew/opt/libomp
+          OpenCV_DIR: /opt/homebrew/opt/opencv@4/lib/cmake/opencv4
+        run: |
+          python -m pip install --upgrade pip build "scikit-build-core>=0.10" "pybind11>=2.11" pytest
+          pip install numpy opencv-python-headless huggingface-hub pillow
+          python -m build --wheel
+          pip install dist/*.whl
+          python -c "from ncnn_ocr import NATIVE_AVAILABLE; assert NATIVE_AVAILABLE"
+          pytest -q tests/test_integration.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-wheel-macos-arm64
+          path: dist/*.whl
+          retention-days: 7

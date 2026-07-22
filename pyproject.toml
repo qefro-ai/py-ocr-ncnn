@@ -1,0 +1,47 @@
+[project]
+name = "ncnn-ocr"
+version = "0.1.0"
+description = "High-performance OCR using PaddleOCR PP-OCR Mobile models on Tencent NCNN"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.10"
+authors = [{ name = "Abu" }]
+dependencies = [
+    "numpy>=1.21",
+    "opencv-python-headless>=4.5",
+    "huggingface-hub>=0.20",
+    "pillow>=9.0",
+]
+keywords = ["ocr", "ncnn", "paddleocr", "pp-ocr", "text-recognition"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.4"]
+
+[project.urls]
+Homepage = "https://github.com/developerabu/py-ocr-ncnn"
+Repository = "https://github.com/developerabu/py-ocr-ncnn"
+Documentation = "https://github.com/developerabu/py-ocr-ncnn#readme"
+
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.11"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+wheel.packages = ["src/ncnn_ocr"]
+build-dir = "build/{wheel_tag}"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
