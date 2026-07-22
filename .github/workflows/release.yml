@@ -63,7 +63,7 @@ jobs:
 
       - name: Smoke test wheel
         run: |
-          pip install dist/*.whl opencv-python-headless huggingface-hub pillow
+          pip install dist/*.whl opencv-python-headless huggingface-hub pillow pytest
           python -c "from ncnn_ocr import OCR, NATIVE_AVAILABLE; assert NATIVE_AVAILABLE"
           python -m pytest -q tests/test_integration.py
 
@@ -98,7 +98,7 @@ jobs:
 
       - name: Smoke test wheel
         run: |
-          pip install dist/*.whl opencv-python-headless huggingface-hub pillow
+          pip install dist/*.whl opencv-python-headless huggingface-hub pillow pytest
           python -c "from ncnn_ocr import OCR, NATIVE_AVAILABLE; assert NATIVE_AVAILABLE"
           python -m pytest -q tests/test_integration.py
 
