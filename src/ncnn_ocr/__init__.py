@@ -22,4 +22,4 @@ __all__ = [
     "supported_langs",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"

@@ -1,6 +1,6 @@
 [project]
 name = "ncnn-ocr"
-version = "0.1.0"
+version = "0.1.1"
 description = "High-performance OCR using PaddleOCR PP-OCR Mobile models on Tencent NCNN"
 readme = "README.md"
 license = { text = "Apache-2.0" }

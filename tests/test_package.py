@@ -8,7 +8,7 @@ from ncnn_ocr.types import LineResult, Point
 
 
 def test_version() -> None:
-    assert __version__ == "0.1.0"
+    assert __version__ == "0.1.1"
 
 
 def test_supported_langs_includes_tamil() -> None:
