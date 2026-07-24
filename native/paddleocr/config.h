@@ -24,7 +24,8 @@ struct ClsConfig
     int reco_threads{1};
     std::string model_path;
     bool enable{true};
-    bool most_angle{true};
+    // Per-line angle is more accurate for mixed-orientation pages.
+    bool most_angle{false};
     bool is_fp16{false};
 };
 

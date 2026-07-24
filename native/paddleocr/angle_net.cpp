@@ -1,5 +1,6 @@
 #include <utility>
 #include <algorithm>
+#include <iterator>
 
 #include "plog/Log.h"
 
@@ -104,12 +105,10 @@ Angle AngleNet::Cls(const cv::Mat &image) const
     ncnn::Mat out;
     ex.extract("output", out);
 
-    // score to angle
-    float *arr = reinterpret_cast<float *>(out.data);
-    std::vector<float> scores(arr, arr + out.w);
-
-    auto max_it = std::max_element(scores.begin(), scores.end());
-    int max_i = static_cast<int>(std::distance(scores.begin(), max_it));
+    // score to angle (decode in place; no vector copy)
+    const float *arr = reinterpret_cast<const float *>(out.data);
+    auto max_it = std::max_element(arr, arr + out.w);
+    int max_i = static_cast<int>(std::distance(arr, max_it));
     float max_score = *max_it;
 
     return {max_i == 1, max_score};

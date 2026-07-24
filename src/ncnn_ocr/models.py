@@ -141,7 +141,7 @@ def write_runtime_config(
             "reco_threads": -1,
             "model_path": str(cls_path),
             "enable": True,
-            "most_angle": True,
+            "most_angle": False,
             "fp16": False,
         },
         "rec": {

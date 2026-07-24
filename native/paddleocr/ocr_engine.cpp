@@ -92,10 +92,10 @@ bool OCREngine::Initialize(const std::string &config_path)
     det_config.infer_threads = GetThreads(GetJValue(j, {"det", "infer_threads"}, 1));
     det_config.model_path = GetJValue(j, {"det", "model_path"}, std::string());
     det_config.padding = GetJValue(j, {"det","padding"}, 50);
-    det_config.max_side_len = GetJValue(j, {"det","max_side_len"}, 50);
-    det_config.box_thres = GetJValue(j, {"det", "box_thres"}, 0.4f);
+    det_config.max_side_len = GetJValue(j, {"det","max_side_len"}, 1024);
+    det_config.box_thres = GetJValue(j, {"det", "box_thres"}, 0.5f);
     det_config.bitmap_thres = GetJValue(j, {"det", "bitmap_thres"}, 0.3f);
-    det_config.unclip_ratio = GetJValue(j, {"det", "unclip_ratio"}, 1.6f);
+    det_config.unclip_ratio = GetJValue(j, {"det", "unclip_ratio"}, 2.0f);
     det_config.is_fp16 = GetJValue(j, {"det", "fp16"}, false);
 
     ClsConfig &cls_config = config_.cls_config;
@@ -103,7 +103,7 @@ bool OCREngine::Initialize(const std::string &config_path)
     cls_config.reco_threads = GetThreads(GetJValue(j, {"cls", "reco_threads"}, 1));
     cls_config.model_path = GetJValue(j, {"cls", "model_path"}, std::string());
     cls_config.enable = GetJValue(j, {"cls", "enable"}, true);
-    cls_config.most_angle = GetJValue(j, {"cls", "most_angle"}, true);
+    cls_config.most_angle = GetJValue(j, {"cls", "most_angle"}, false);
     cls_config.is_fp16 = GetJValue(j, {"cls", "fp16"}, false);
 
     RecConfig &rec_config = config_.rec_config;

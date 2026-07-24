@@ -1,5 +1,6 @@
 #include <utility>
 #include <algorithm>
+#include <cstring>
 
 #include "plog/Log.h"
 
@@ -85,13 +86,10 @@ std::vector<TextBox> DBNet::Det(const cv::Mat &image) const
     ncnn::Mat out;
     ex.extract("output", out);
 
-    // binarization
-    const float denorm_values[1] = {255.0f};
-    out.substract_mean_normalize(0, denorm_values);
-
-    cv::Mat pred(out.h, out.w, CV_8UC1);
-    out.to_pixels(pred.data, ncnn::Mat::PIXEL_GRAY);
-    cv::Mat bitmap = pred > static_cast<uint8_t>(config_.bitmap_thres * 255.0f);
+    // Keep float probability map for thresholding and box scoring (avoids uint8 quantization).
+    cv::Mat pred(out.h, out.w, CV_32FC1);
+    std::memcpy(pred.ptr<float>(), out.channel(0), static_cast<size_t>(out.h * out.w) * sizeof(float));
+    cv::Mat bitmap = pred > config_.bitmap_thres;
 
     // get boxes from bitmap
     auto text_boxes = FindBoxesFromBitmap(pred, bitmap, img_rows, img_cols, ratio_rows, ratio_cols);

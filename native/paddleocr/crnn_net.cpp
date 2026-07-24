@@ -86,9 +86,13 @@ std::vector<TextLine> CRNNNet::Rec(const std::vector<cv::Mat> &text_images) cons
 
 TextLine CRNNNet::Rec(const cv::Mat &text_image) const
 {
-    // resize
+    if (text_image.empty() || text_image.rows <= 0 || text_image.cols <= 0)
+        return TextLine{};
+
+    // resize (cap width to avoid huge tensors on long lines)
     float ratio = static_cast<float>(target_h_) / text_image.rows;
     int rsz_w = static_cast<int>(text_image.cols * ratio);
+    rsz_w = std::max(1, std::min(rsz_w, max_width_));
 
     ncnn::Mat blob = ncnn::Mat::from_pixels_resize(text_image.data, ncnn::Mat::PIXEL_BGR,
         text_image.cols, text_image.rows, rsz_w, target_h_);
@@ -100,16 +104,13 @@ TextLine CRNNNet::Rec(const cv::Mat &text_image) const
     ncnn::Mat out;
     ex.extract("output", out);
 
-    // decode output and get TextLine
-    float *arr = reinterpret_cast<float *>(out.data);
-    std::vector<float> scores(arr, arr + out.h * out.w);
-
-    return Score2TextLine(scores, out.h, out.w);
+    // Decode directly from ncnn output (no full-buffer copy).
+    return Score2TextLine(reinterpret_cast<const float *>(out.data), out.h, out.w);
 }
 
-TextLine CRNNNet::Score2TextLine(const std::vector<float> &scores, const int rows, const int cols) const
+TextLine CRNNNet::Score2TextLine(const float *scores, const int rows, const int cols) const
 {
-    if (cols != static_cast<int>(keys_.size()))
+    if (scores == nullptr || cols != static_cast<int>(keys_.size()))
     {
         PLOGE << "Unmatched scores: " << cols << " != " << keys_.size();
         return TextLine{};
@@ -117,14 +118,16 @@ TextLine CRNNNet::Score2TextLine(const std::vector<float> &scores, const int row
 
     std::string text;
     std::vector<float> text_scores;
+    text.reserve(static_cast<size_t>(rows));
+    text_scores.reserve(static_cast<size_t>(rows));
     int prev_i = -1;
     const int blank_i = 0;
 
     for (int i = 0; i < rows; ++i)
     {
-        auto max_it = std::max_element(scores.begin() + i * cols, scores.begin() + (i + 1) * cols);
-        int max_i = static_cast<int>(std::distance(scores.begin(), max_it));
-        max_i %= cols;
+        const float *row = scores + i * cols;
+        auto max_it = std::max_element(row, row + cols);
+        int max_i = static_cast<int>(std::distance(row, max_it));
         float max_v = *max_it;
 
         if (max_i != blank_i && max_i != prev_i)

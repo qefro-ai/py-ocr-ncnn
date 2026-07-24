@@ -39,12 +39,14 @@ private:
     std::vector<std::string> keys_{};
 
     static inline const int target_h_ = 48;
+    // Cap long-line width (height=48): ~20x aspect keeps quality without huge tensors.
+    static inline const int max_width_ = 960;
     static inline const float mean_values_[3]{127.5f, 127.5f, 127.5f};
     static inline const float norm_values_[3]{1.0f / 127.5f, 1.0f / 127.5f, 1.0f / 127.5f};
 
     TextLine Rec(const cv::Mat &text_image) const;
 
-    TextLine Score2TextLine(const std::vector<float> &scores, const int rows, const int cols) const;
+    TextLine Score2TextLine(const float *scores, const int rows, const int cols) const;
 };
 
 }   // namespace OCR
