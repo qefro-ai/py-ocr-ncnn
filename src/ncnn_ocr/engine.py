@@ -14,7 +14,7 @@ from numpy.typing import NDArray
 from .arabic import fix_arabic_visual_order
 from .lang import ProfileName, normalize_lang, supported_langs
 from .models import default_model_dir, write_runtime_config
-from .types import LineResult
+from .types import LineResult, Point
 
 try:
     from ncnn_ocr._ncnn_ocr import Engine as _NativeEngine
@@ -83,6 +83,22 @@ class OCR:
         bgr = _load_bgr(image)
         raw = self._engine.recognize(bgr)
         return [LineResult.from_native(item) for item in raw]
+
+    def recognize_crops(self, images: Sequence[ImageInput]) -> list[LineResult]:
+        """Run recognition on pre-cropped text lines (no detection step)."""
+        bgrs = [_load_bgr(img) for img in images]
+        raw = self._engine.recognize_crops(bgrs)
+        return [
+            LineResult(
+                text=item["text"],
+                confidence=item["confidence"],
+                box=(Point(0, 0), Point(0, 0), Point(0, 0), Point(0, 0)),
+                box_score=1.0,
+                rotated=False,
+                angle_score=1.0,
+            )
+            for item in raw
+        ]
 
     def recognize_text(self, image: ImageInput, *, join: str = "\n") -> str:
         """Return recognized text joined by ``join``."""

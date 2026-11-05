@@ -35,6 +35,8 @@ public:
 
     std::vector<OCRResult> Run(const cv::Mat &image) const;
 
+    std::vector<TextLine> RecognizeCrops(const std::vector<cv::Mat> &crops) const;
+
 private:
     Config config_;
     std::unique_ptr<DBNet> det_net_{};

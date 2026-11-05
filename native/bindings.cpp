@@ -92,6 +92,27 @@ public:
         return out;
     }
 
+    py::list recognize_crops(const py::list &images) const
+    {
+        std::vector<cv::Mat> mats;
+        mats.reserve(images.size());
+        for (const auto &item : images)
+        {
+            mats.push_back(numpy_to_bgr_mat(item.cast<py::array_t<uint8_t>>()));
+        }
+        const std::vector<OCR::TextLine> lines = engine_.RecognizeCrops(mats);
+        py::list out;
+        for (const auto &line : lines)
+        {
+            py::dict item;
+            item["text"] = line.text;
+            item["confidence"] = mean_score(line.scores);
+            item["scores"] = line.scores;
+            out.append(item);
+        }
+        return out;
+    }
+
 private:
     OCR::OCREngine engine_{};
 };
@@ -105,5 +126,7 @@ PYBIND11_MODULE(_ncnn_ocr, m)
     py::class_<PyOCREngine>(m, "Engine")
         .def(py::init<const std::string &>(), py::arg("config_path"))
         .def("recognize", &PyOCREngine::recognize, py::arg("image"),
-             "Run det+cls+rec on a uint8 BGR numpy array (HxWx3).");
+             "Run det+cls+rec on a uint8 BGR numpy array (HxWx3).")
+        .def("recognize_crops", &PyOCREngine::recognize_crops, py::arg("images"),
+             "Run CRNN recognition on a list of cropped BGR numpy arrays (HxWx3).");
 }

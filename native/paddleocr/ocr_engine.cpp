@@ -203,6 +203,15 @@ std::vector<OCRResult> OCREngine::Run(const cv::Mat &image) const
     return results;
 }
 
+std::vector<TextLine> OCREngine::RecognizeCrops(const std::vector<cv::Mat> &crops) const
+{
+    if (!rec_net_ || crops.empty())
+    {
+        return {};
+    }
+    return rec_net_->Rec(crops);
+}
+
 void OCREngine::ShowConfig() const
 {
     const DetConfig &det_config = config_.det_config;
